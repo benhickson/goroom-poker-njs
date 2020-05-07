@@ -77,9 +77,50 @@ const drawCard = () => {
     
     return randomCardString;
 }
-const freshenTheDeck = () => {
+const shuffleTheDeck = () => {
     deck = [...freshDeck];
 }
+
+// Dealer and player rotation
+
+const nextDealer = (game) => {
+  const currentDealer = game.dealer;
+  const sortedPlayerIdList = game.players.filter(player => !player.out)
+                                        .sort((a, b) => a.position - b.position)
+                                        .map(player => player.id);
+  const currentIndex = sortedPlayerIdList.indexOf(currentDealer);
+  const nextIndex = (currentIndex + 1 >= sortedPlayerIdList.length)
+                    ? 0
+                    : currentIndex + 1;
+  return sortedPlayerIdList[nextIndex];
+}
+
+const bigAndSmallBlindPlayerIds = (game) => {
+  const currentDealer = game.dealer;
+  const sortedPlayerIdList = game.players.filter(player => !player.out)
+                                        .sort((a, b) => a.position - b.position)
+                                        .map(player => player.id);
+  const currentDealerIndex = sortedPlayerIdList.indexOf(currentDealer);
+  const smallBlindIndex = (currentDealerIndex + 1 >= sortedPlayerIdList.length)
+                          ? 0
+                          : currentDealerIndex + 1;
+  const bigBlindIndex = (smallBlindIndex + 1 >= sortedPlayerIdList.length)
+                        ? 0
+                        : smallBlindIndex + 1;
+  return [sortedPlayerIdList[smallBlindIndex], sortedPlayerIdList[bigBlindIndex]];
+}
+
+const nextPlayer = (game, lastPlayerId = game.next_player) => {
+  const sortedPlayerIdList = game.players.filter(player => !player.out)
+                                        .sort((a, b) => a.position - b.position)
+                                        .map(player => player.id);
+  const lastPlayerIndex = sortedPlayerIdList.indexOf(lastPlayerId);
+  const nextPlayerIndex = (lastPlayerIndex + 1 >= sortedPlayerIdList.length)
+                          ? 0
+                          : lastPlayerIndex + 1;
+  return sortedPlayerIdList[nextPlayerIndex];
+}
+
 
 // Game fetching and saving helpers
 
@@ -110,14 +151,18 @@ const filterGameState = (game, user_id) => {
   // not sure why, but for some reason sometimes game is undefined
   // so, we wrap it in this if block to prevent errors
   if (game && game.started) {
+    // only show the player their own cards
     game.players = game.players.map(player => {
       if (player.id === user_id) {
-          return player
+        return player
       } else {
-          player.cards = ['back','back']
-          return player
+        player.cards = ['back','back']
+        return player
       }
     });
+    
+    // empty the deck array so they can't see what cards are left
+    game.deck = []
   }
   
   return game;
@@ -272,7 +317,71 @@ io.on('connect', (socket) => {
     });
 
     socket.on('deal_cards', () => {
-      console.log('dealing...');
+      console.log('dealing cards in room', room_id);
+      fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
+        const game = gameArray[0];
+        // check if cards already dealt
+        if (game.stage > 0) {
+          console.log('Already-dealt round in room', room_id, 'was asked to deal');
+        } else {
+          // assign the dealer
+          game.dealer = nextDealer(game);
+          // shuffle the deck
+          shuffleTheDeck();
+          // find the big and small blind player id's
+          const [smallBlindPlayerId, bigBlindPlayerId] = bigAndSmallBlindPlayerIds(game);
+
+          // collect blinds and deal the cards
+          game.players = game.players
+            .filter(player => !player.out)
+            .map(player => {
+              if (player.id === smallBlindPlayerId) {
+                // collect the small blind
+                player.chips = player.chips - game.small_blind;
+              } else if (player.id === bigBlindPlayerId) {
+                // collect the big blind
+                player.chips = player.chips - game.big_blind;
+              }
+              // deal the cards
+              player.cards = [drawCard(), drawCard()];
+
+              return player
+            });
+
+          // pay the blinds into the pot
+          game.pot = game.big_blind + game.small_blind;
+
+          // determine whose turn it is next
+          game.next_player = nextPlayer(game, bigBlindPlayerId);
+          
+          // save it back to the database
+          fetch(`${GAMES_ENDPOINT}/${game.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              dealer: game.dealer, 
+              players: game.players, 
+              pot: game.pot,
+              deck: deck,
+              stage: 1,
+              next_player: game.next_player
+            })
+          })
+            .then(r => r.json())
+            .then(game => {
+              // notify everyone that a new private state is available, so they can view their cards
+              io.sockets.emit('private_state_available', game);
+            });
+        }
+      });
+    });
+
+    socket.on('private_game_state_request', () => {
+      fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
+        socket.emit('game_state', filterGameState(gameArray[0], user_id));
+      });
     });
 
     // get game from db based on room_id, if it exists
@@ -317,7 +426,7 @@ io.on('connect', (socket) => {
 
     //listen on new_message
     socket.on('new_message', (data) => {
-        freshenTheDeck();
+        shuffleTheDeck();
         const board = [drawCard(), drawCard(), drawCard(), drawCard(), drawCard()];
         const hand1 = [drawCard(), drawCard()];
         const hand2 = [drawCard(), drawCard()];

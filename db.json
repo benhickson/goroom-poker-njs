@@ -50,6 +50,7 @@
         "king spades",
         "three clubs"
       ],
+      "deck": [],
       "dealer": 43,
       "next_player": 44,
       "bet_leader": 43,
@@ -63,52 +64,108 @@
     {
       "started": true,
       "room_id": 23,
-      "created_at": 1588826449371,
-      "created_by": 44,
+      "created_at": 1588830805446,
+      "created_by": 41,
       "pending_players": [
-        {
-          "id": 44,
-          "display_name": "Anonymous Platypus"
-        },
         {
           "id": 41,
           "display_name": "Anonymous Giraffe"
+        },
+        {
+          "id": 44,
+          "display_name": "Anonymous Platypus"
         }
       ],
       "players": [
         {
-          "id": 44,
+          "id": 41,
           "position": 1,
-          "display_name": "Anonymous Platypus",
-          "chips": 200,
-          "cards": [],
+          "display_name": "Anonymous Giraffe",
+          "chips": 195,
+          "cards": [
+            "nine spades",
+            "two clubs"
+          ],
           "current_stage_bet": 0,
           "folded": false,
           "out": false
         },
         {
-          "id": 41,
+          "id": 44,
           "position": 2,
-          "display_name": "Anonymous Giraffe",
-          "chips": 200,
-          "cards": [],
+          "display_name": "Anonymous Platypus",
+          "chips": 197.5,
+          "cards": [
+            "ace clubs",
+            "king clubs"
+          ],
           "current_stage_bet": 0,
           "folded": false,
           "out": false
         }
       ],
-      "pot": 0,
+      "pot": 7.5,
       "board_cards": [],
-      "dealer": 0,
-      "next_player": 0,
+      "dealer": 41,
+      "next_player": 44,
       "bet_leader": null,
-      "stage": 0,
+      "stage": 1,
       "big_blind": 5,
       "small_blind": 2.5,
       "amount_to_stay": null,
       "cost_to_call": null,
       "turn_options": "before-bets",
-      "id": 2
+      "id": 2,
+      "deck": [
+        "three clubs",
+        "four clubs",
+        "five clubs",
+        "six clubs",
+        "seven clubs",
+        "eight clubs",
+        "nine clubs",
+        "ten clubs",
+        "jack clubs",
+        "queen clubs",
+        "ace diamonds",
+        "two diamonds",
+        "three diamonds",
+        "four diamonds",
+        "five diamonds",
+        "six diamonds",
+        "seven diamonds",
+        "eight diamonds",
+        "nine diamonds",
+        "ten diamonds",
+        "jack diamonds",
+        "queen diamonds",
+        "king diamonds",
+        "ace hearts",
+        "two hearts",
+        "three hearts",
+        "four hearts",
+        "five hearts",
+        "six hearts",
+        "seven hearts",
+        "eight hearts",
+        "nine hearts",
+        "ten hearts",
+        "jack hearts",
+        "queen hearts",
+        "king hearts",
+        "ace spades",
+        "two spades",
+        "three spades",
+        "four spades",
+        "five spades",
+        "six spades",
+        "seven spades",
+        "eight spades",
+        "ten spades",
+        "jack spades",
+        "queen spades",
+        "king spades"
+      ]
     }
   ]
 }
