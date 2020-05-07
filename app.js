@@ -15,14 +15,6 @@ app.get('/', (req, res) => {
 })
 server = app.listen(5000)
 
-// // Database
-// const db = new sqlite3.Database('./db/development.db', (err) => {
-//   if (err) {
-//     console.error(err.message);
-//   }
-//   console.log('Connected to the development database.');
-// });
-
 // Socket.io
 const io = SocketIO(server, {
     // all this is required for cross-origin issues
@@ -36,6 +28,9 @@ const io = SocketIO(server, {
         res.end();
     }
 });
+
+// Constants
+const GAMES_ENDPOINT = 'http://localhost:3004/games';
 
 // My poker helpers
 const freshDeck = ['ace clubs','two clubs','three clubs','four clubs','five clubs','six clubs','seven clubs','eight clubs','nine clubs','ten clubs','jack clubs','queen clubs','king clubs','ace diamonds','two diamonds','three diamonds','four diamonds','five diamonds','six diamonds','seven diamonds','eight diamonds','nine diamonds','ten diamonds','jack diamonds','queen diamonds','king diamonds','ace hearts','two hearts','three hearts','four hearts','five hearts','six hearts','seven hearts','eight hearts','nine hearts','ten hearts','jack hearts','queen hearts','king hearts','ace spades','two spades','three spades','four spades','five spades','six spades','seven spades','eight spades','nine spades','ten spades','jack spades','queen spades','king spades'];
@@ -81,23 +76,78 @@ const freshenTheDeck = () => {
     deck = [...freshDeck];
 };
 
-const createOrSelectGame = (room_id) => {
-  const GAMES_ENDPOINT = 'http://localhost:3004/games'
+// Game fetching and saving helpers
+
+const fetchGame = (room_id) => {  
   return fetch(`${GAMES_ENDPOINT}?room_id=${room_id}`)
           .then(r => r.json())
 }
 
 const filterGameState = (game, user_id) => {
-  game.players = game.players.map(player => {
-    if (player.id === user_id) {
-        return player
+  // not sure why, but for some reason sometimes game is undefined
+  // so, we wrap it in this if block to prevent errors
+  if (game && game.started) {
+    game.players = game.players.map(player => {
+      if (player.id === user_id) {
+          return player
+      } else {
+          player.cards = ['back','back']
+          return player
+      }
+    });
+  }
+  
+  return game;
+}
+
+const createNewGame = (room_id, creator_id) => {
+  console.log('user', creator_id, 'is creating game for room', room_id)
+  const newGame = {
+    // "id": null, // created by database
+    "started": false,
+    "room_id": room_id,
+    "created_at": Date.now(),
+    "created_by": creator_id,
+    "pending_players": [],
+    "players": [],
+    "pot": null,
+    "board_cards": [],
+    "dealer": 0,            // zeroes instead of nulls, to reset things on the frontend.
+    "next_player": 0,         // likely better to manage this in the frontend.
+    "bet_leader": null,
+    "stage": 1,
+    "big_blind": 50,
+    "small_blind": 25,
+    "amount_to_stay": null,
+    "cost_to_call": null,
+    "turn_options": "before-bets"
+  };
+  return fetch(GAMES_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(newGame)
+  })
+    .then(r => r.json())
+}
+
+fetchOrCreateGameAndEmit = (room_id, user_id, emitterFn) => {
+  // get the game from db and send it to the player
+  fetchGame(room_id)
+  .then(game => {
+    if (game.length === 1) {
+      emitterFn(game);
+    } else if (game.length === 0) {
+      console.log('game for room', room_id, 'does not yet exist');
+      createNewGame(room_id, user_id)
+        .then(() => {
+          fetchOrCreateGameAndEmit(room_id, user_id, emitterFn);
+        });
     } else {
-        player.cards = ['back','back']
-        return player
+      console.log('ERROR: more than one game was returned for room', room_id)
     }
   });
-
-  return game;
 }
 
 // Socket.io listener
@@ -116,11 +166,9 @@ io.on('connect', (socket) => {
     // get the goroom room_id from query params
     room_id = parseInt(socket.handshake.query.room_id)
 
-    // get the game from db and send it to the player
-    createOrSelectGame(room_id)
-      .then(game => {
-        socket.emit('game_state', filterGameState(game[0], user_id));
-      });
+    fetchOrCreateGameAndEmit(room_id, user_id, (game) => {
+      socket.emit('game_state', filterGameState(game[0], user_id));
+    })
     
     
 
