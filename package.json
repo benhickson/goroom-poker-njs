@@ -1,7 +1,7 @@
 {
-  "name": "simplechatapp",
-  "version": "1.0.0",
-  "description": "Simple chat app built with node.js and socket.io",
+  "name": "goroom-poker.njs",
+  "version": "0.0.1",
+  "description": "",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,17 +9,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ngrt/simpleChatApp.git"
+    "url": "git+https://github.com/benhickson/goroom-poker-njs.git"
   },
-  "author": "Noufel Gouirhate",
-  "license": "ISC",
+  "author": "Ben Hickson",
+  "license": "",
   "bugs": {
-    "url": "https://github.com/ngrt/simpleChatApp/issues"
+    "url": ""
   },
-  "homepage": "https://github.com/ngrt/simpleChatApp#readme",
+  "homepage": "",
   "dependencies": {
+    "cors": "^2.8.5",
     "ejs": "^2.5.7",
     "express": "^4.16.2",
+    "json-server": "^0.16.1",
+    "jwt-decode": "^2.2.0",
+    "node-fetch": "^2.6.0",
     "nodemon": "^1.14.3",
     "socket.io": "^2.0.4"
   }

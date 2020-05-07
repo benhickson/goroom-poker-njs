@@ -1,2 +1,3 @@
 /node_modules
 .DS_Store
+/poker-evaluator-0.3.2/data/HandRanks.dat
