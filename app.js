@@ -193,7 +193,7 @@ io.on('connect', (socket) => {
               headers: {
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({pending_players: game.pending_players})
+              body: JSON.stringify({ pending_players: game.pending_players })
             })
               .then(r => r.json())
               .then(game => {
@@ -204,6 +204,31 @@ io.on('connect', (socket) => {
         }
       })
     })
+
+    socket.on('disconnect', (reason) => {
+      fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
+        const game = gameArray[0];
+        if (game.started) {
+          // do nothing, it doesnt matter if you left the game, you can just re-join
+          // TODO: emit some message to let the other players know you went offline
+        } else {
+          // remove the user from the pending players array
+          game.pending_players = game.pending_players.filter(player => player.id != user_id);
+          fetch(`${GAMES_ENDPOINT}/${game.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ pending_players: game.pending_players })
+          })
+            .then(r => r.json())
+            .then(game => {
+              // emit the updated game state to everyone
+              io.sockets.emit('game_state', game);
+            })
+        }
+      })
+    });
 
     // get game from db based on room_id, if it exists
     // if room_id in games:
