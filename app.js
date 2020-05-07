@@ -121,6 +121,14 @@ const nextPlayer = (game, lastPlayerId = game.next_player) => {
   return sortedPlayerIdList[nextPlayerIndex];
 }
 
+const advancePlayerOrStage = (game) => {
+  // if the next player is the bet leader, that means they have been called, and the game can advance, otherwise not
+  const nextStage = (nextPlayer(game) === game.bet_leader) ? game.stage + 1 : game.stage;
+  // if the game advances, set the next player to the left of dealer, otherwise, get the regular next player
+  const nextPlayerId = (nextStage > lastStage) ? nextPlayer(game, game.dealer) : nextPlayer(game);
+  return [nextPlayerId, nextStage];
+}
+
 
 // Game fetching and saving helpers
 
@@ -200,7 +208,24 @@ const createNewGame = (room_id, creator_id) => {
     .then(r => r.json())
 }
 
+// patch a game and emit signal to request private game state
+const patchGameAndEmitPrivateAvailability = (gameId, gamePatchObject) => {
+  fetch(`${GAMES_ENDPOINT}/${gameId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(gamePatchObject)
+  })
+    .then(r => r.json())
+    .then(() => {
+      // notify everyone that a new private state is available
+      io.sockets.emit('private_state_available');
+    });
+}
+
 // Socket.io listener
+
 io.on('connect', (socket) => {
 
     // tests for emitting to different recepients
@@ -351,29 +376,21 @@ io.on('connect', (socket) => {
           // pay the blinds into the pot
           game.pot = game.big_blind + game.small_blind;
 
+          // make the big blind player the bet leader
+          game.bet_leader = bigBlindPlayerId;
+
           // determine whose turn it is next
           game.next_player = nextPlayer(game, bigBlindPlayerId);
-          
-          // save it back to the database
-          fetch(`${GAMES_ENDPOINT}/${game.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-              dealer: game.dealer, 
-              players: game.players, 
-              pot: game.pot,
-              deck: deck,
-              stage: 1,
-              next_player: game.next_player
-            })
-          })
-            .then(r => r.json())
-            .then(game => {
-              // notify everyone that a new private state is available, so they can view their cards
-              io.sockets.emit('private_state_available', game);
-            });
+
+          // patch the game
+          patchGameAndEmitPrivateAvailability(game.id, {
+            dealer: game.dealer, 
+            players: game.players, 
+            pot: game.pot,
+            deck: deck,
+            stage: 1,
+            bet_leader: game.bet_leader,
+          });
         }
       });
     });
@@ -381,6 +398,68 @@ io.on('connect', (socket) => {
     socket.on('private_game_state_request', () => {
       fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
         socket.emit('game_state', filterGameState(gameArray[0], user_id));
+      });
+    });
+
+    socket.on('user_move', (move) => {
+      // fetch the game
+      fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
+        const game = gameArray[0];
+        if (!game.started || game.next_player != user_id){
+          console.log('room', room_id, 'user', user_id, 'attempted:', move.type, 'but it isn\'t their turn');
+        } else {
+          if (game.turn_options === 'before-bet') {
+            // move options before a bet has been made
+            if (move.type == 'fold') {
+              // fold the player
+              game.players = game.players.map(player => {
+                if (player.id === user_id) {
+                  player.folded = true;
+                }
+                return player
+              });
+              // advance the player and/or stage
+              const [nextPlayer, nextStage] = advancePlayerOrStage(game);
+              // patch the game
+              patchGameAndEmitPrivateAvailability(game.id, {
+                players: game.players,
+                nextPlayer: nextPlayer,
+                stage: nextStage,
+              });
+            } else if (move.type == 'check') {
+            
+            } else if (move.type == 'bet') {
+            
+            } else {
+              console.log('room', room_id, 'user', user_id, 'attempted invalid move type:', move.type);
+              return null
+            }
+          } else if (game.turn_options === 'after-bet') {
+            // move options after a bet has been made
+            if (move.type == 'fold') {
+              // is it a valid turnOption
+            } else if (move.type == 'call') {
+            
+            } else if (move.type == 'raiseBet') {
+              
+            } else {
+              console.log('room', room_id, 'user', user_id, 'attempted invalid move type:', move.type);
+              return null
+            }
+          } else if (game.turn_options === 'end-not-called') {
+            // move options at the end of a round/hand if a user has not been called, but is still playing
+            if (move.type == 'showCards') {
+            
+            } else if (move.type == 'muckCards') {
+              
+            } else {
+              console.log('room', room_id, 'user', user_id, 'attempted invalid move type:', move.type);
+              return null
+            }
+          }
+            
+          console.log('room', room_id, 'user', user_id, 'attempted', move.type);
+        }
       });
     });
 
