@@ -63,7 +63,16 @@
       "room_id": 23,
       "created_at": 1588820304686,
       "created_by": 41,
-      "pending_players": [],
+      "pending_players": [
+        {
+          "id": 44,
+          "display_name": "Anonymous Platypus"
+        },
+        {
+          "id": 41,
+          "display_name": "Anonymous Giraffe"
+        }
+      ],
       "players": [],
       "pot": null,
       "board_cards": [],

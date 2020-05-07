@@ -83,6 +83,24 @@ const fetchGame = (room_id) => {
           .then(r => r.json())
 }
 
+fetchOrCreateGameAndThenCallback = (room_id, user_id, callbackFn) => {
+  // get the game from db and send it to the player
+  fetchGame(room_id)
+  .then(game => {
+    if (game.length === 1) {
+      callbackFn(game);
+    } else if (game.length === 0) {
+      console.log('game for room', room_id, 'does not yet exist');
+      createNewGame(room_id, user_id)
+        .then(() => {
+          fetchOrCreateGameAndThenCallback(room_id, user_id, callbackFn);
+        });
+    } else {
+      console.log('ERROR: more than one game was returned for room', room_id)
+    }
+  });
+}
+
 const filterGameState = (game, user_id) => {
   // not sure why, but for some reason sometimes game is undefined
   // so, we wrap it in this if block to prevent errors
@@ -132,24 +150,6 @@ const createNewGame = (room_id, creator_id) => {
     .then(r => r.json())
 }
 
-fetchOrCreateGameAndEmit = (room_id, user_id, emitterFn) => {
-  // get the game from db and send it to the player
-  fetchGame(room_id)
-  .then(game => {
-    if (game.length === 1) {
-      emitterFn(game);
-    } else if (game.length === 0) {
-      console.log('game for room', room_id, 'does not yet exist');
-      createNewGame(room_id, user_id)
-        .then(() => {
-          fetchOrCreateGameAndEmit(room_id, user_id, emitterFn);
-        });
-    } else {
-      console.log('ERROR: more than one game was returned for room', room_id)
-    }
-  });
-}
-
 // Socket.io listener
 io.on('connect', (socket) => {
 
@@ -169,9 +169,40 @@ io.on('connect', (socket) => {
     // log the connection
     console.log('User connected:', user_id, user_name, 'in room:', room_id);
 
-    // send the game state to the user (async)
-    fetchOrCreateGameAndEmit(room_id, user_id, (game) => {
-      socket.emit('game_state', filterGameState(game[0], user_id));
+    // send the game state to the user on connect (async)
+    fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
+      socket.emit('game_state', filterGameState(gameArray[0], user_id));
+    })
+
+    socket.on('join_game', () =>{
+      fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
+        const game = gameArray[0]
+        if (game.started) {
+          // do nothing, you can't add players after the game has started
+          // TODO: emit an "illegal move" message
+        } else {
+          // if the user is in the game already
+          if (game.pending_players.map(player => player.id).includes(user_id)) {
+            // send the game state back to them
+            socket.emit('game_state', game);
+          } else {
+            // add them to the pending players array
+            game.pending_players = [...game.pending_players, {id: user_id, display_name: user_name}];
+            fetch(`${GAMES_ENDPOINT}/${game.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({pending_players: game.pending_players})
+            })
+              .then(r => r.json())
+              .then(game => {
+                // emit the updated game state to everyone
+                io.sockets.emit('game_state', game);
+              });
+          }
+        }
+      })
     })
 
     // get game from db based on room_id, if it exists
