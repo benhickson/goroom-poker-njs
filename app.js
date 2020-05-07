@@ -166,14 +166,13 @@ io.on('connect', (socket) => {
     // get the goroom room_id from query params
     room_id = parseInt(socket.handshake.query.room_id)
 
+    // log the connection
+    console.log('User connected:', user_id, user_name, 'in room:', room_id);
+
+    // send the game state to the user (async)
     fetchOrCreateGameAndEmit(room_id, user_id, (game) => {
       socket.emit('game_state', filterGameState(game[0], user_id));
     })
-    
-    
-
-    // log something
-    console.log('User connected:', user_id, user_name, 'in room:', room_id);
 
     // get game from db based on room_id, if it exists
     // if room_id in games:
