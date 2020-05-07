@@ -27,7 +27,8 @@
             "four clubs"
           ],
           "current_stage_bet": 25,
-          "folded": false
+          "folded": false,
+          "out": false
         },
         {
           "id": 41,
@@ -39,7 +40,8 @@
             "king diamonds"
           ],
           "current_stage_bet": 35,
-          "folded": false
+          "folded": false,
+          "out": false
         }
       ],
       "pot": 250,
@@ -59,10 +61,10 @@
       "turn_options": "after-bets"
     },
     {
-      "started": false,
+      "started": true,
       "room_id": 23,
-      "created_at": 1588820304686,
-      "created_by": 41,
+      "created_at": 1588826449371,
+      "created_by": 44,
       "pending_players": [
         {
           "id": 44,
@@ -73,15 +75,36 @@
           "display_name": "Anonymous Giraffe"
         }
       ],
-      "players": [],
-      "pot": null,
+      "players": [
+        {
+          "id": 44,
+          "position": 1,
+          "display_name": "Anonymous Platypus",
+          "chips": 200,
+          "cards": [],
+          "current_stage_bet": 0,
+          "folded": false,
+          "out": false
+        },
+        {
+          "id": 41,
+          "position": 2,
+          "display_name": "Anonymous Giraffe",
+          "chips": 200,
+          "cards": [],
+          "current_stage_bet": 0,
+          "folded": false,
+          "out": false
+        }
+      ],
+      "pot": 0,
       "board_cards": [],
       "dealer": 0,
       "next_player": 0,
       "bet_leader": null,
-      "stage": 1,
-      "big_blind": 50,
-      "small_blind": 25,
+      "stage": 0,
+      "big_blind": 5,
+      "small_blind": 2.5,
       "amount_to_stay": null,
       "cost_to_call": null,
       "turn_options": "before-bets",

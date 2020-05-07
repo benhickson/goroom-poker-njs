@@ -31,6 +31,11 @@ const io = SocketIO(server, {
 
 // Constants
 const GAMES_ENDPOINT = 'http://localhost:3004/games';
+const START_CHIPS = {
+  player_stack: 200,
+  big_blind: 5,
+  small_blind: 2.50
+};
 
 // My poker helpers
 const freshDeck = ['ace clubs','two clubs','three clubs','four clubs','five clubs','six clubs','seven clubs','eight clubs','nine clubs','ten clubs','jack clubs','queen clubs','king clubs','ace diamonds','two diamonds','three diamonds','four diamonds','five diamonds','six diamonds','seven diamonds','eight diamonds','nine diamonds','ten diamonds','jack diamonds','queen diamonds','king diamonds','ace hearts','two hearts','three hearts','four hearts','five hearts','six hearts','seven hearts','eight hearts','nine hearts','ten hearts','jack hearts','queen hearts','king hearts','ace spades','two spades','three spades','four spades','five spades','six spades','seven spades','eight spades','nine spades','ten spades','jack spades','queen spades','king spades'];
@@ -48,13 +53,13 @@ const numberEvalMap = {
     'jack': 'j',
     'queen': 'q',
     'king': 'k',
-}
+};
 const suitEvalMap = {
     'clubs': 'c',
     'diamonds': 'd',
     'hearts': 'h',
     'spades': 's',
-}
+};
 const evalMap = (cards) => {
     return cards.map(card => {
         const numberSuit = card.split(' ');
@@ -71,10 +76,10 @@ const drawCard = () => {
     deck.splice(randomCardIndex, 1);
     
     return randomCardString;
-};
+}
 const freshenTheDeck = () => {
     deck = [...freshDeck];
-};
+}
 
 // Game fetching and saving helpers
 
@@ -128,14 +133,14 @@ const createNewGame = (room_id, creator_id) => {
     "created_by": creator_id,
     "pending_players": [],
     "players": [],
-    "pot": null,
+    "pot": 0,
     "board_cards": [],
     "dealer": 0,            // zeroes instead of nulls, to reset things on the frontend.
     "next_player": 0,         // likely better to manage this in the frontend.
     "bet_leader": null,
-    "stage": 1,
-    "big_blind": 50,
-    "small_blind": 25,
+    "stage": 0,
+    "big_blind": START_CHIPS.big_blind,
+    "small_blind": START_CHIPS.small_blind,
     "amount_to_stay": null,
     "cost_to_call": null,
     "turn_options": "before-bets"
@@ -172,7 +177,7 @@ io.on('connect', (socket) => {
     // send the game state to the user on connect (async)
     fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
       socket.emit('game_state', filterGameState(gameArray[0], user_id));
-    })
+    });
 
     socket.on('join_game', () =>{
       fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
@@ -202,8 +207,8 @@ io.on('connect', (socket) => {
               });
           }
         }
-      })
-    })
+      });
+    });
 
     socket.on('disconnect', (reason) => {
       fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
@@ -228,6 +233,46 @@ io.on('connect', (socket) => {
             })
         }
       })
+    });
+
+    socket.on('start_game', () => {
+      fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
+        const game = gameArray[0];
+        if (game.started) {
+          console.log('Already-started game in room', room_id, 'was attempted to start');
+        } else {
+          // Start the game
+          game.started = true;
+          game.players = game.pending_players.map((player, index) => ({
+            id: player.id,
+            position: (index + 1),
+            display_name: player.display_name,
+            chips: START_CHIPS.player_stack,
+            cards: [],
+            current_stage_bet: 0,
+            folded: false,
+            out: false
+          }));    
+
+          // save it back to the database
+          fetch(`${GAMES_ENDPOINT}/${game.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ started: game.started, players: game.players })
+          })
+            .then(r => r.json())
+            .then(game => {
+              // emit the updated game state to everyone
+              io.sockets.emit('game_state', game);
+            });
+        }
+      });
+    });
+
+    socket.on('deal_cards', () => {
+      console.log('dealing...');
     });
 
     // get game from db based on room_id, if it exists
