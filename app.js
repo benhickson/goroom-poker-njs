@@ -104,9 +104,9 @@ const filterGameState = (game, user_id) => {
 io.on('connect', (socket) => {
 
     // tests for emitting to different recepients
-    io.sockets.emit('test_messages', 'to everyone');
-    socket.emit('test_messages', 'to just me');
-    socket.broadcast.emit('test_messages', 'from someone else to everyone else');
+    // io.sockets.emit('test_messages', 'to everyone');
+    // socket.emit('test_messages', 'to just me');
+    // socket.broadcast.emit('test_messages', 'from someone else to everyone else');
 
     // get user details from JWT
     const jwtPayload = jwtDecode(socket.handshake.headers.authorization);        // TODO: verify signature is from Rails
@@ -119,7 +119,7 @@ io.on('connect', (socket) => {
     // get the game from db and send it to the player
     createOrSelectGame(room_id)
       .then(game => {
-        socket.emit('test_messages', filterGameState(game[0], user_id));
+        socket.emit('game_state', filterGameState(game[0], user_id));
       });
     
     
