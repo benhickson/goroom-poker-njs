@@ -26,7 +26,6 @@ const endHand = game => {
       hand_name: evaluation.handName
     });
   });
-  console.log(scores);
   let winnerArray = [];
   scores.forEach(score => {
     if (winnerArray.length === 0) {
@@ -38,8 +37,7 @@ const endHand = game => {
     }
   });
   game.hand_winners = winnerArray;
-  console.log(game.winners);
-  game.next_player = null;
+  game.next_player = null;          // using this to hide the action buttons... there is possibly a better, more semantic way to do this.
   return game
 }
 
