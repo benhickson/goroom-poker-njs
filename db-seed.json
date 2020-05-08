@@ -1,0 +1,66 @@
+{
+  "games": [
+    {
+      "id": 1,
+      "started": true,
+      "room_id": 230,
+      "created_at": "2020-05-06 22:23:40",
+      "created_by": 44,
+      "pending_players": [
+        {
+          "id": 44,
+          "display_name": "Anonymous Platypus"
+        },
+        {
+          "id": 41,
+          "display_name": "Anonymous Giraffe"
+        }
+      ],
+      "players": [
+        {
+          "id": 44,
+          "position": 1,
+          "display_name": "Anonymous Platypus",
+          "chips": 50.25,
+          "cards": [
+            "three hearts",
+            "four clubs"
+          ],
+          "current_stage_bet": 25,
+          "folded": false,
+          "out": false
+        },
+        {
+          "id": 41,
+          "position": 2,
+          "display_name": "Anonymous Giraffe",
+          "chips": 20.5,
+          "cards": [
+            "ace hearts",
+            "king diamonds"
+          ],
+          "current_stage_bet": 35,
+          "folded": false,
+          "out": false
+        }
+      ],
+      "pot": 250,
+      "board_cards": [
+        "ace spades",
+        "king spades",
+        "three clubs"
+      ],
+      "deck": [],
+      "dealer": 43,
+      "next_player": 44,
+      "bet_leader": 43,
+      "stage": 2,
+      "big_blind": 25,
+      "small_blind": 12.5,
+      "amount_to_stay": 35,
+      "cost_to_call": 10,
+      "turn_options": "after-bets",
+      "hand_winners": []
+    }
+  ]
+}
