@@ -51,7 +51,7 @@ const advancePlayerOrStage = game => {
   // TODO: deal with when all the other users fold, auto advancing to game.stage=5 to declare the winner
 
   // set the cost to call based on the amount_to_stay minus the next player's current_stage_bet
-  const costForNextPlayerToCall = game.amount_to_stay - game.players.find(player => player.id === game.next_player).current_stage_bet;
+  const costForNextPlayerToCall = game.amount_to_stay - game.players.find(player => player.id === nextPlayerId).current_stage_bet;
   console.log(nextPlayerId, nextStage, costForNextPlayerToCall);
   return [nextPlayerId, nextStage, costForNextPlayerToCall];
 }
@@ -63,7 +63,7 @@ const modifyGameStateToAdvanceStage = (game) => {
   // NOTE: game.stage must already be set to the next stage before calling this function
 
   // load the deck into its local variable, so cards.drawCard() can work properly
-  deck = game.deck;
+  cards.setDeck(game.deck);
 
   switch (game.stage) {
     case 2: // flop
@@ -82,13 +82,39 @@ const modifyGameStateToAdvanceStage = (game) => {
       break;
   }
 
+  game.players = game.players.map(player => {
+    player.current_stage_bet = 0;
+    return player;
+  })
   game.amount_to_stay = 0;
   game.cost_to_call = 0;
+  game.bet_leader = null;
+  game.turn_options = 'before-bets';
 
   // save the deck back to its game
-  game.deck = deck;
+  game.deck = cards.getDeck();
 
   return game;
 }
 
-module.exports = { nextDealer, bigAndSmallBlindPlayerIds, nextPlayer, advancePlayerOrStage, modifyGameStateToAdvanceStage };
+const finishTurn = (game) => {
+  // advance the next player/stage
+  const [nextPlayer, nextStage, costForNextPlayerToCall] = advancePlayerOrStage(game);
+  game.next_player = nextPlayer;
+  game.cost_to_call = costForNextPlayerToCall;
+  // if the stage advanced, update accordingly
+  if (nextStage > game.stage) {
+    game.stage = nextStage;
+    game = modifyGameStateToAdvanceStage(game);
+  }
+  return game;
+}
+
+module.exports = { 
+  nextDealer, 
+  bigAndSmallBlindPlayerIds, 
+  nextPlayer, 
+  advancePlayerOrStage, 
+  modifyGameStateToAdvanceStage,
+  finishTurn,
+};

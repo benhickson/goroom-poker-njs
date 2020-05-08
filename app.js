@@ -3,6 +3,7 @@ const { START_CHIPS } = require('./utils/constants');
 const rotations = require('./utils/rotations');
 const cards = require('./utils/cards');
 const db = require('./utils/db');
+const pokerMethods = require('./utils/pokerMethods');
 
 const jwtDecode = require('jwt-decode');
 
@@ -121,6 +122,9 @@ io.on('connect', (socket) => {
             return player
           });
 
+        // save the deck back after dealing
+        game.deck = cards.getDeck();
+
         // pay the blinds into the pot
         game.pot = game.big_blind + game.small_blind;
         // make the big blind player the bet leader
@@ -152,10 +156,11 @@ io.on('connect', (socket) => {
   socket.on('user_move', (move) => {
     // fetch the game
     db.fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
-      const game = gameArray[0];
+      let game = gameArray[0];
       if (!game.started || game.next_player != user_id) {
-        console.log('room', room_id, 'user', user_id, 'attempted:', move.type, 'but it isn\'t their turn');
+        console.log('room', room_id, 'user', user_id, 'attempted', move.type, 'but it isn\'t their turn');
       } else {
+        console.log('room', room_id, 'user', user_id, 'is attempting to', move.type);
         if (game.turn_options === 'before-bets') {
           // move options before a bet has been made
           if (move.type == 'fold') {
@@ -167,60 +172,29 @@ io.on('connect', (socket) => {
               }
               return player
             });
-
-            // advance the player and/or stage
-            const [nextPlayer, nextStage, costForNextPlayerToCall] = rotations.advancePlayerOrStage(game);
-
-            // if the stage advanced, update the game state accordingly
-            if (nextStage > game.stage) {
-              game.next_player = nextPlayer;
-              game.stage = nextStage;
-              game.cost_to_call = costForNextPlayerToCall;
-              modifiedGame = rotations.modifyGameStateToAdvanceStage(game);
-              // patch the changed game states
-              db.patchGameAndEmitPrivateAvailability(game.id, {
-                ...modifiedGame
-              });
-            } else {
-              // patch the changed game states
-              db.patchGameAndEmitPrivateAvailability(game.id, {
-                players: game.players,
-                nextPlayer: nextPlayer,
-                cost_to_call: costForNextPlayerToCall,
-                stage: nextStage,
-              });
-            }
+            // advance the next player/stage
+            game = rotations.finishTurn(game);
+            // patch the game states
+            db.patchGameAndEmitPrivateAvailability(game.id, game);
 
           } else if (move.type == 'check') {
+
+            if (!game.bet_leader) {
+              game.bet_leader = user_id;
+            }
             // advance the player and/or stage
-            const [nextPlayer, nextStage, costForNextPlayerToCall] = rotations.advancePlayerOrStage(game);
+            game = rotations.finishTurn(game);
+            // patch the game states
+            db.patchGameAndEmitPrivateAvailability(game.id, game);
 
-            console.log(nextPlayer, nextStage, costForNextPlayerToCall);
-            io.sockets.emit('test_messages', game);
-
-            // if the stage advanced, update the game state accordingly
-            // if (nextStage > game.stage) {
-            //   game.next_player = nextPlayer;
-            //   game.stage = nextStage;
-            //   game.cost_to_call = costForNextPlayerToCall;
-            //   modifiedGame = rotations.modifyGameStateToAdvanceStage(game);
-            //   // patch the changed game states
-            //   console.log('advance to stage:', nextStage);
-            //   db.patchGameAndEmitPrivateAvailability(game.id, modifiedGame);
-            // } else {
-            //   // player becomes the bet_leader if there isn't one yet (if someone else didn't already check)
-            //   if (!game.bet_leader) {
-            //     game.bet_leader = user_id;
-            //   }
-            //   console.log('no advance, stage still:', nextStage);
-            //   // patch the changed game states
-            //   db.patchGameAndEmitPrivateAvailability(game.id, {
-            //     bet_leader: game.bet_leader,
-            //     next_player: nextPlayer,
-            //     cost_to_call: costForNextPlayerToCall,
-            //   });
-            // }
           } else if (move.type == 'bet') {
+
+            // place the bet
+            game = pokerMethods.placeBet(game, user_id, move.amount);
+            // advance the next player/stage
+            game = rotations.finishTurn(game);
+            // patch the game states
+            db.patchGameAndEmitPrivateAvailability(game.id, game);
 
           } else {
             console.log('room', room_id, 'user', user_id, 'attempted invalid move type:', move.type);
@@ -229,6 +203,7 @@ io.on('connect', (socket) => {
         } else if (game.turn_options === 'after-bets') {
           // move options after a bet has been made
           if (move.type == 'fold') {
+
             // fold the player
             game.players = game.players.map(player => {
               if (player.id === user_id) {
@@ -236,32 +211,28 @@ io.on('connect', (socket) => {
               }
               return player
             });
+            // advance the next player/stage
+            game = rotations.finishTurn(game);
+            // patch the game states
+            db.patchGameAndEmitPrivateAvailability(game.id, game);
 
-            // advance the player and/or stage
-            const [nextPlayer, nextStage, costForNextPlayerToCall] = rotations.advancePlayerOrStage(game);
-
-            // if the stage advanced, update the game state accordingly
-            if (nextStage > game.stage) {
-              game.next_player = nextPlayer;
-              game.stage = nextStage;
-              game.cost_to_call = costForNextPlayerToCall;
-              modifiedGame = rotations.modifyGameStateToAdvanceStage(game);
-              // patch the changed game states
-              db.patchGameAndEmitPrivateAvailability(game.id, {
-                ...modifiedGame
-              });
-            } else {
-              // patch the changed game states
-              db.patchGameAndEmitPrivateAvailability(game.id, {
-                players: game.players,
-                nextPlayer: nextPlayer,
-                cost_to_call: costForNextPlayerToCall,
-                stage: nextStage,
-              });
-            }
           } else if (move.type == 'call') {
 
+            // place the bet
+            game = pokerMethods.placeBet(game, user_id, game.cost_to_call);
+            // advance the next player/stage
+            game = rotations.finishTurn(game);
+            // patch the game states
+            db.patchGameAndEmitPrivateAvailability(game.id, game);
+
           } else if (move.type == 'raiseBet') {
+
+            // place the bet
+            game = pokerMethods.placeBet(game, user_id, move.amount);
+            // advance the next player/stage
+            game = rotations.finishTurn(game);
+            // patch the game states
+            db.patchGameAndEmitPrivateAvailability(game.id, game);
 
           } else {
             console.log('room', room_id, 'user', user_id, 'attempted invalid move type:', move.type);
@@ -278,8 +249,6 @@ io.on('connect', (socket) => {
             return null;
           }
         }
-
-        console.log('room', room_id, 'user', user_id, 'attempted', move.type);
       }
     });
   });

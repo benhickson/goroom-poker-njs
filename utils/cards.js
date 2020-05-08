@@ -4,6 +4,9 @@ let deck = [];
 const setDeck = (newDeckArray) => {
   deck = newDeckArray;
 }
+const getDeck = () => {
+  return deck;
+}
 
 const freshDeck = ['ace clubs', 'two clubs', 'three clubs', 'four clubs', 'five clubs', 'six clubs', 'seven clubs', 'eight clubs', 'nine clubs', 'ten clubs', 'jack clubs', 'queen clubs', 'king clubs', 'ace diamonds', 'two diamonds', 'three diamonds', 'four diamonds', 'five diamonds', 'six diamonds', 'seven diamonds', 'eight diamonds', 'nine diamonds', 'ten diamonds', 'jack diamonds', 'queen diamonds', 'king diamonds', 'ace hearts', 'two hearts', 'three hearts', 'four hearts', 'five hearts', 'six hearts', 'seven hearts', 'eight hearts', 'nine hearts', 'ten hearts', 'jack hearts', 'queen hearts', 'king hearts', 'ace spades', 'two spades', 'three spades', 'four spades', 'five spades', 'six spades', 'seven spades', 'eight spades', 'nine spades', 'ten spades', 'jack spades', 'queen spades', 'king spades'];
 
@@ -51,4 +54,4 @@ const shuffleTheDeck = () => {
   deck = [...freshDeck];
 }
 
-module.exports = { evalMap, drawCard, shuffleTheDeck, deck, setDeck };
+module.exports = { evalMap, drawCard, shuffleTheDeck, getDeck, setDeck };
