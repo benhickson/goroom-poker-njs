@@ -1,5 +1,7 @@
 // import the cards helpers
 const cards = require('./cards');
+// import the poker methods
+const pokerMethods = require('./pokerMethods');
 
 // Dealer and player rotation
 
@@ -76,7 +78,7 @@ const modifyGameStateToAdvanceStage = (game) => {
       game.board_cards = [...game.board_cards, cards.drawCard()];
       break;
     case 5: // end/winner
-      game.hand_winners = determineWinners(game);
+      game = pokerMethods.endHand(game);
       break;
     default:
       break;

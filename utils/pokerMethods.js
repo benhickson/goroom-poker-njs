@@ -1,4 +1,5 @@
 const PokerEvaluator = require('../poker-evaluator-0.3.2');
+const cards = require('./cards');
 
 // game-specific poker helpers
 
@@ -9,6 +10,37 @@ const determineWinners = game => {
 const payoutsForWinners = (game, winners) => {
   const amountToPayEach = (game.pot / winners.length).toFixed(2);
   return [{ id: game.players[0].id, payout_amount: amountToPayEach }];
+}
+
+const endHand = game => {
+  const scores = []
+  game.players.forEach(player => {
+    const evaluation = PokerEvaluator.evalHand(cards.evalMap([
+      ...game.board_cards,
+      ...player.cards
+    ]));
+    scores.push({
+      id: player.id,
+      display_name: player.display_name,
+      score: evaluation.value,
+      hand_name: evaluation.handName
+    });
+  });
+  console.log(scores);
+  let winnerArray = [];
+  scores.forEach(score => {
+    if (winnerArray.length === 0) {
+      winnerArray = [score];
+    } else if (score.score > winnerArray[0].score) {
+      winnerArray = [score];
+    } else if (score.score === winnerArray[0].score) {
+      winnerArray.push(score);
+    }
+  });
+  game.hand_winners = winnerArray;
+  console.log(game.winners);
+  game.next_player = null;
+  return game
 }
 
 // example evaluation, array of board and array of hand
@@ -42,4 +74,4 @@ const placeBet = (game, userId, betAmount) => {
   return game
 }
 
-module.exports = { placeBet };
+module.exports = { placeBet, endHand };
