@@ -37,7 +37,7 @@ const endHand = game => {
     }
   });
   game.hand_winners = winnerArray;
-  game.next_player = null;          // using this to hide the action buttons... there is possibly a better, more semantic way to do this.
+  game.next_player = null;          // TODO: using this to hide the action buttons... there is possibly a better, more semantic way to do this.
   return game
 }
 
