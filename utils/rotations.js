@@ -33,7 +33,7 @@ const bigAndSmallBlindPlayerIds = (game) => {
 }
 
 const nextPlayer = (game, lastPlayerId = game.next_player) => {
-  const sortedPlayerIdList = game.players.filter(player => !player.out)
+  const sortedPlayerIdList = game.players.filter(player => player.id === lastPlayerId || !player.out && !player.folded)
     .sort((a, b) => a.position - b.position)
     .map(player => player.id);
   const lastPlayerIndex = sortedPlayerIdList.indexOf(lastPlayerId);
@@ -44,13 +44,22 @@ const nextPlayer = (game, lastPlayerId = game.next_player) => {
 }
 
 const advancePlayerOrStage = game => {
-  // if the next player is the bet leader, that means they have been called, and the game can advance, otherwise not
-  const nextStage = (nextPlayer(game) === game.bet_leader) ? game.stage + 1 : game.stage;
+
+  let nextStage;
+  // if there is no more than 1 player still playing, advance to stage 5
+  if (game.players.filter(player => !player.out && !player.folded).length < 2) {
+    nextStage = 5;
+  } else {
+    // if the next player is the bet leader, that means they have been called, and the game can advance, otherwise not
+    if (nextPlayer(game) === game.bet_leader) {
+      nextStage = game.stage + 1;
+    } else {
+      nextStage = game.stage;
+    }
+  }
 
   // if the game stage advances, set the next player to the left of dealer, otherwise, get the regular next player
   const nextPlayerId = (nextStage > game.stage) ? nextPlayer(game, game.dealer) : nextPlayer(game);
-
-  // TODO: deal with when all the other users fold, auto advancing to game.stage=5 to declare the winner
 
   // set the cost to call based on the amount_to_stay minus the next player's current_stage_bet
   const costForNextPlayerToCall = game.amount_to_stay - game.players.find(player => player.id === nextPlayerId).current_stage_bet;

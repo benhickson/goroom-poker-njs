@@ -5,43 +5,65 @@ const cards = require('./cards');
 
 const payoutsForWinners = (game) => {
   const amountToPayEach = parseFloat((game.pot / game.hand_winners.length).toFixed(2));
-  return [{ user_id: game.players[0].id, payout_amount: amountToPayEach }];
+  // return [{ user_id: game.players[0].id, payout_amount: amountToPayEach }];
+  return game.hand_winners.map(winner => ({
+    user_id: winner.id,
+    payout_amount: amountToPayEach,
+  }));
 }
 
 const endHand = game => {
-  const scores = []
-  game.players.forEach(player => {
-    const evaluation = PokerEvaluator.evalHand(cards.evalMap([
-      ...game.board_cards,
-      ...player.cards
-    ]));
-    scores.push({
-      id: player.id,
-      display_name: player.display_name,
-      score: evaluation.value,
-      hand_name: evaluation.handName
+  if (game.board_cards.length < 5) {
+    // can't evaluate hands because not enough cards in play
+    const winningPlayer = game.players.filter(player => !player.folded && !player.out)[0];
+    game.hand_winners = [{
+      id: winningPlayer.id,
+      display_name: winningPlayer.display_name,
+      score: 100, // arbitrary
+      hand_name: '(all other players folded)',    
+    }];
+  } else {
+    const scores = []
+    game.players.forEach(player => {
+      const evaluation = PokerEvaluator.evalHand(cards.evalMap([
+        ...game.board_cards,
+        ...player.cards
+      ]));
+      scores.push({
+        id: player.id,
+        display_name: player.display_name,
+        score: evaluation.value,
+        hand_name: evaluation.handName,
+      });
     });
-  });
-  let winnerArray = [];
-  scores.forEach(score => {
-    if (winnerArray.length === 0) {
-      winnerArray = [score];
-    } else if (score.score > winnerArray[0].score) {
-      winnerArray = [score];
-    } else if (score.score === winnerArray[0].score) {
-      winnerArray.push(score);
-    }
-  });
-  game.hand_winners = winnerArray;
+    let winnerArray = [];
+    scores.forEach(score => {
+      if (winnerArray.length === 0) {
+        winnerArray = [score];
+      } else if (score.score > winnerArray[0].score) {
+        winnerArray = [score];
+      } else if (score.score === winnerArray[0].score) {
+        winnerArray.push(score);
+      }
+    });
+    game.hand_winners = winnerArray;
+  }
+  console.log('winners', game.hand_winners);
+
   payouts = payoutsForWinners(game);
+  console.log('payouts:', payouts);
   game.pot = 0;
+  // console.log('pre',game.players);
   payouts.forEach(payout => {
     game.players.forEach(player => {
       if (player.id === payout.user_id) {
+        console.log('payout user id',payout.user_id)
+        console.log('player id',player.id)
         player.chips += payout.payout_amount;
       }
     });
   });
+  // console.log('post',game.players);
   game.next_player = null;          // TODO: using this to hide the action buttons... there is possibly a better, more semantic way to do this.
   return game;
 }

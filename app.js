@@ -93,8 +93,8 @@ io.on('connect', (socket) => {
     db.fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
       const game = gameArray[0];
       // check if cards already dealt
-      if (game.stage > 0) {
-        console.log('Already-dealt round in room', room_id, 'was asked to deal');
+      if (game.stage > 0 && game.stage < 5) {
+        console.log('Already-dealt round in room', room_id, 'was asked to deal by player', user_id);
       } else {
         // assign the dealer
         game.dealer = rotations.nextDealer(game);
@@ -105,6 +105,11 @@ io.on('connect', (socket) => {
 
         // collect blinds and deal the cards
         game.players = game.players
+          .map(player => {
+            // clear any cards from the prior hands
+            player.cards = [];
+            return player;
+          })
           .filter(player => !player.out)
           .map(player => {
             if (player.id === smallBlindPlayerId) {
@@ -118,8 +123,9 @@ io.on('connect', (socket) => {
             }
             // deal the cards
             player.cards = [cards.drawCard(), cards.drawCard()];
+            player.folded = false;
 
-            return player
+            return player;
           });
 
         // save the deck back after dealing
@@ -140,6 +146,11 @@ io.on('connect', (socket) => {
         game.cost_to_call = game.amount_to_stay - game.players.find(player => player.id === game.next_player).current_stage_bet;
 
         game.stage = 1;
+
+        // reset any winners from the prior hand
+        game.hand_winners = [];
+        // reset the board cards from the prior hand
+        game.board_cards = [];
 
         // patch the game
         db.patchGameAndEmitPrivateAvailability(game.id, game);
