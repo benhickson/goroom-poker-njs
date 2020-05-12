@@ -1,15 +1,11 @@
 const PokerEvaluator = require('../poker-evaluator-0.3.2');
 const cards = require('./cards');
 
-// game-specific poker helpers
+// pure poker logic
 
-const determineWinners = game => {
-  return [{ id: game.players[0].id, display_name: game.players[0].display_name }];
-}
-// call this in the above case: 5, and loop/map over it to pay the players
-const payoutsForWinners = (game, winners) => {
-  const amountToPayEach = (game.pot / winners.length).toFixed(2);
-  return [{ id: game.players[0].id, payout_amount: amountToPayEach }];
+const payoutsForWinners = (game) => {
+  const amountToPayEach = parseFloat((game.pot / game.hand_winners.length).toFixed(2));
+  return [{ user_id: game.players[0].id, payout_amount: amountToPayEach }];
 }
 
 const endHand = game => {
@@ -37,8 +33,17 @@ const endHand = game => {
     }
   });
   game.hand_winners = winnerArray;
+  payouts = payoutsForWinners(game);
+  game.pot = 0;
+  payouts.forEach(payout => {
+    game.players.forEach(player => {
+      if (player.id === payout.user_id) {
+        player.chips += payout.payout_amount;
+      }
+    });
+  });
   game.next_player = null;          // TODO: using this to hide the action buttons... there is possibly a better, more semantic way to do this.
-  return game
+  return game;
 }
 
 // example evaluation, array of board and array of hand

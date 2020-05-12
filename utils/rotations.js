@@ -54,13 +54,11 @@ const advancePlayerOrStage = game => {
 
   // set the cost to call based on the amount_to_stay minus the next player's current_stage_bet
   const costForNextPlayerToCall = game.amount_to_stay - game.players.find(player => player.id === nextPlayerId).current_stage_bet;
-  console.log(nextPlayerId, nextStage, costForNextPlayerToCall);
+
   return [nextPlayerId, nextStage, costForNextPlayerToCall];
 }
 
 const modifyGameStateToAdvanceStage = (game) => {
-
-  console.log('modify state', game.stage);
 
   // NOTE: game.stage must already be set to the next stage before calling this function
 
