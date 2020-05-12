@@ -98,7 +98,7 @@ const patchAndEmitGame = (gameId, gamePatchObject) => {
     .then(r => r.json())
     .then(game => {
       // emit the updated game state to everyone
-      io.sockets.emit('game_state', game);
+      io.sockets.to(`room_${game.room_id}`).emit('game_state', game);
     });
 }
 
@@ -112,9 +112,9 @@ const patchGameAndEmitPrivateAvailability = (gameId, gamePatchObject) => {
     body: JSON.stringify(gamePatchObject)
   })
     .then(r => r.json())
-    .then(() => {
+    .then(game => {
       // notify everyone that a new private state is available
-      io.sockets.emit('private_state_available');
+      io.sockets.to(`room_${game.room_id}`).emit('private_state_available');
     });
 }
 

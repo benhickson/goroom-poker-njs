@@ -17,7 +17,10 @@ io.on('connect', (socket) => {
   const user_name = jwtPayload.user_name;
 
   // get the goroom room_id from query params
-  room_id = parseInt(socket.handshake.query.room_id)
+  const room_id = parseInt(socket.handshake.query.room_id);
+
+  // join channel for this room
+  socket.join(`room_${room_id}`);
 
   // log the connection
   console.log('User connected:', user_id, user_name, 'in room:', room_id);
@@ -60,7 +63,7 @@ io.on('connect', (socket) => {
         // patch game in db and emit to everyone
         db.patchAndEmitGame(game.id, { pending_players: game.pending_players });
       }
-    })
+    });
   });
 
   socket.on('start_game', () => {
