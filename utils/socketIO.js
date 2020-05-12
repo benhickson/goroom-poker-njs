@@ -8,7 +8,7 @@ app.use(express.static('public'));
 app.get('/', (req, res) => {
   res.render('index')
 })
-server = app.listen(5000);
+server = app.listen(process.env.PORT || 5000);
 
 // Socket.io config
 const io = SocketIO(server, {
