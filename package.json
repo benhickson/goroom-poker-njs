@@ -29,5 +29,8 @@
   },
   "nodemonConfig": {
     "ignore": ["db.json", "README.md"]
+  },
+  "engines": {
+    "node": "13.12.0"
   }
 }

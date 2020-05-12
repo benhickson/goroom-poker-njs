@@ -1,5 +1,5 @@
 // Constants
-const GAMES_ENDPOINT = 'http://localhost:3004/games';
+const GAMES_ENDPOINT = 'https://goroom-poker-jsonserver.herokuapp.com/games';
 const START_CHIPS = {
   player_stack: 200,
   big_blind: 5,
