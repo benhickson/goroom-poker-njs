@@ -147,6 +147,7 @@ io.on('connect', (socket) => {
         // determine whose turn it is next
         game.next_player = rotations.nextPlayer(game, bigBlindPlayerId);
         game.cost_to_call = game.amount_to_stay - game.players.find(player => player.id === game.next_player).current_stage_bet;
+        game.maximum_bet = pokerMethods.maximumBetForNextPlayer(game);
 
         game.stage = 1;
 
@@ -203,11 +204,18 @@ io.on('connect', (socket) => {
 
           } else if (move.type == 'bet') {
 
-            // place the bet
-            game = pokerMethods.placeBet(game, user_id, move.amount);
-            // advance the next player/stage
-            game = rotations.finishTurn(game);
-            // patch the game states
+            // if the bet is within the maximum bet
+            if (move.amount <= game.maximum_bet) {
+              console.log('bet allowed')
+              // place the bet
+              game = pokerMethods.placeBet(game, user_id, move.amount);
+              // advance the next player/stage
+              game = rotations.finishTurn(game);
+            } else {
+              console.log('bet too high')
+            }
+
+            // patch and emit the game state
             db.patchGameAndEmitPrivateAvailability(game.id, game);
 
           } else {
@@ -241,10 +249,16 @@ io.on('connect', (socket) => {
 
           } else if (move.type == 'raiseBet') {
 
-            // place the bet
-            game = pokerMethods.placeBet(game, user_id, move.amount);
-            // advance the next player/stage
-            game = rotations.finishTurn(game);
+            // if the bet is within the maximum bet
+            if (move.amount <= game.maximum_bet) {
+              console.log('bet allowed')
+              // place the bet
+              game = pokerMethods.placeBet(game, user_id, move.amount);
+              // advance the next player/stage
+              game = rotations.finishTurn(game);
+            } else {
+              console.log('bet too high')
+            }
             // patch the game states
             db.patchGameAndEmitPrivateAvailability(game.id, game);
 

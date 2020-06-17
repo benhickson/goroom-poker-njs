@@ -12,6 +12,14 @@ const payoutsForWinners = (game) => {
   }));
 }
 
+// set the maximum bet the amount of the lowest player's chip stack
+// this serves as the "all-in" limit as well as the individual player limit
+// TODO: when refactoring for enhanced "all-in" (side pots etc) this function can be removed, 
+//       and simply compare against the player's chips at bet time.
+const maximumBetForNextPlayer = (game) => {
+  return game.players.reduce((maximumBet, player) => Math.min(maximumBet, player.chips), game.players[0].chips)
+}
+
 const endHand = game => {
   if (game.board_cards.length < 5) {
     // can't evaluate hands because not enough cards in play
@@ -53,7 +61,6 @@ const endHand = game => {
   payouts = payoutsForWinners(game);
   console.log('payouts:', payouts);
   game.pot = 0;
-  // console.log('pre',game.players);
   payouts.forEach(payout => {
     game.players.forEach(player => {
       if (player.id === payout.user_id) {
@@ -63,13 +70,12 @@ const endHand = game => {
       }
     });
   });
-  // console.log('post',game.players);
-  game.next_player = null;          // TODO: using this to hide the action buttons... there is possibly a better, more semantic way to do this.
+
+  // if (payouts.map(payout => payout.user_id).includes(game.bet_leader)) {
+    game.next_player = null;           // TODO: using this to hide the action buttons... there is possibly a better, more semantic way to do this.
+    // }
   return game;
 }
-
-// example evaluation, array of board and array of hand
-// PokerEvaluator.evalHand(evalMap([...board, ...hand1]))
 
 const placeBet = (game, userId, betAmount) => {
   game.players = game.players
@@ -99,4 +105,8 @@ const placeBet = (game, userId, betAmount) => {
   return game
 }
 
-module.exports = { placeBet, endHand };
+module.exports = { 
+  placeBet,
+  endHand,
+  maximumBetForNextPlayer,   
+};

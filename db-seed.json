@@ -53,6 +53,7 @@
       "deck": [],
       "dealer": 43,
       "next_player": 44,
+      "maximum_bet": 1500,
       "bet_leader": 43,
       "stage": 2,
       "big_blind": 25,

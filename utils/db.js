@@ -67,6 +67,7 @@ const createNewGame = (room_id, creator_id) => {
     "board_cards": [],
     "dealer": 0,            // zeroes instead of nulls, to reset things on the frontend.
     "next_player": 0,         // likely better to manage this in the frontend.
+    "maximum_bet": null,
     "bet_leader": null,
     "stage": 0,
     "big_blind": START_CHIPS.big_blind,
