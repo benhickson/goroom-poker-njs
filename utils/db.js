@@ -39,10 +39,10 @@ const filterGameState = (game, user_id) => {
     // only show the player their own cards
     game.players = game.players.map(player => {
       if (player.id === user_id) {
-        return player
+        return player;
       } else {
         player.cards = ['back', 'back']
-        return player
+        return player;
       }
     });
 
@@ -67,13 +67,14 @@ const createNewGame = (room_id, creator_id) => {
     "board_cards": [],
     "dealer": 0,            // zeroes instead of nulls, to reset things on the frontend.
     "next_player": 0,         // likely better to manage this in the frontend.
-    "maximum_bet": null,
+    "max_bet_for_hand": null,
+    "max_bet_next_player": null,
     "bet_leader": null,
     "stage": 0,
     "big_blind": START_CHIPS.big_blind,
     "small_blind": START_CHIPS.small_blind,
-    "amount_to_stay": null,
-    "cost_to_call": null,
+    "amount_to_stay": 0,
+    "cost_to_call": 0,
     "turn_options": null,     // 'before-bets','after-bets','end-not-called'
     "hand_winners": []
   };

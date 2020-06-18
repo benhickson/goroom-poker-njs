@@ -81,6 +81,7 @@ io.on('connect', (socket) => {
           chips: START_CHIPS.player_stack,
           cards: [],
           current_stage_bet: 0,
+          current_hand_bet: 0,
           folded: false,
           out: false
         }));
@@ -94,11 +95,15 @@ io.on('connect', (socket) => {
   socket.on('deal_cards', () => {
     console.log('dealing cards in room', room_id);
     db.fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
-      const game = gameArray[0];
+      let game = gameArray[0];
       // check if cards already dealt
       if (game.stage > 0 && game.stage < 5) {
         console.log('Already-dealt round in room', room_id, 'was asked to deal by player', user_id);
       } else {
+        // set the hand's max bet - the "All-in" limit
+        // TODO: this will need to be more complex in the case of side pots
+        game.max_bet_for_hand = pokerMethods.getSmallestChipStackAmount(game);
+
         // assign the dealer
         game.dealer = rotations.nextDealer(game);
         // shuffle the deck
@@ -106,7 +111,13 @@ io.on('connect', (socket) => {
         // find the big and small blind player id's
         const [smallBlindPlayerId, bigBlindPlayerId] = rotations.bigAndSmallBlindPlayerIds(game);
 
-        // collect blinds and deal the cards
+        // collect the blinds
+        game = pokerMethods.placeBet(game, smallBlindPlayerId, game.small_blind);
+        game.cost_to_call = game.small_blind;
+        game = pokerMethods.placeBet(game, bigBlindPlayerId, game.big_blind);
+        
+
+        // deal the cards
         game.players = game.players
           .map(player => {
             // clear any cards from the prior hands
@@ -115,39 +126,20 @@ io.on('connect', (socket) => {
           })
           .filter(player => !player.out)
           .map(player => {
-            if (player.id === smallBlindPlayerId) {
-              // collect the small blind
-              player.chips = player.chips - game.small_blind;
-              player.current_stage_bet = game.small_blind;
-            } else if (player.id === bigBlindPlayerId) {
-              // collect the big blind
-              player.chips = player.chips - game.big_blind;
-              player.current_stage_bet = game.big_blind;
-            }
             // deal the cards
             player.cards = [cards.drawCard(), cards.drawCard()];
             player.folded = false;
 
             return player;
           });
-
+        
         // save the deck back after dealing
         game.deck = cards.getDeck();
-
-        // pay the blinds into the pot
-        game.pot = game.big_blind + game.small_blind;
-        // make the big blind player the bet leader
-        game.bet_leader = bigBlindPlayerId;
-        // TODO: calculate this based on bet leader
-        game.amount_to_stay = game.big_blind;
-
-        // blinds counts as betting, so the turn options are 'after-bets'
-        game.turn_options = 'after-bets';
         
         // determine whose turn it is next
         game.next_player = rotations.nextPlayer(game, bigBlindPlayerId);
         game.cost_to_call = game.amount_to_stay - game.players.find(player => player.id === game.next_player).current_stage_bet;
-        game.maximum_bet = pokerMethods.maximumBetForNextPlayer(game);
+        game.max_bet_next_player = pokerMethods.getMaxBetForNextPlayer(game);
 
         game.stage = 1;
 
@@ -205,7 +197,7 @@ io.on('connect', (socket) => {
           } else if (move.type == 'bet') {
 
             // if the bet is within the maximum bet
-            if (move.amount <= game.maximum_bet) {
+            if (move.amount <= game.max_bet_next_player) {
               console.log('bet allowed')
               // place the bet
               game = pokerMethods.placeBet(game, user_id, move.amount);
@@ -250,7 +242,7 @@ io.on('connect', (socket) => {
           } else if (move.type == 'raiseBet') {
 
             // if the bet is within the maximum bet
-            if (move.amount <= game.maximum_bet) {
+            if (move.amount <= game.max_bet_next_player) {
               console.log('bet allowed')
               // place the bet
               game = pokerMethods.placeBet(game, user_id, move.amount);

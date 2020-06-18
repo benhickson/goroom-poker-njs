@@ -108,15 +108,17 @@ const modifyGameStateToAdvanceStage = (game) => {
 
 const finishTurn = (game) => {
   // advance the next player/stage
-  const [nextPlayer, nextStage, costForNextPlayerToCall, maximumBetForNextPlayer] = advancePlayerOrStage(game);
+  const [nextPlayer, nextStage, costForNextPlayerToCall] = advancePlayerOrStage(game);
   game.next_player = nextPlayer;
   game.cost_to_call = costForNextPlayerToCall;
-  game.maximum_bet = pokerMethods.maximumBetForNextPlayer(game);
+  game.max_bet_next_player = pokerMethods.getMaxBetForNextPlayer(game);
+  
   // if the stage advanced, update accordingly
   if (nextStage > game.stage) {
     game.stage = nextStage;
     game = modifyGameStateToAdvanceStage(game);
   }
+
   return game;
 }
 
