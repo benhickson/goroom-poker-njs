@@ -23,12 +23,16 @@
     "express": "^4.16.2",
     "json-server": "^0.16.1",
     "jwt-decode": "^2.2.0",
+    "latest-poker-evaluator": "^0.3.2",
     "node-fetch": "^2.6.0",
     "nodemon": "^1.14.3",
     "socket.io": "^2.0.4"
   },
   "nodemonConfig": {
-    "ignore": ["db.json", "README.md"]
+    "ignore": [
+      "db.json",
+      "README.md"
+    ]
   },
   "engines": {
     "node": "13.12.0"
