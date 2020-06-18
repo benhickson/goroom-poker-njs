@@ -64,7 +64,8 @@
       "amount_to_stay": 35,
       "cost_to_call": 10,
       "turn_options": "after-bets",
-      "hand_winners": []
+      "hand_winners": [],
+      "game_winner": 44
     }
   ]
 }

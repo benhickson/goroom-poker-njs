@@ -79,12 +79,21 @@ const endHand = game => {
   });
 
   // if any user's chipcounts have gone down to zero, mark them "out"
-  // game.players.forEach(player => {
-  //   if (player.chips <= 0) {
-  //     player.out = true;
-  //     console.log(player.display_name, 'is out.');
-  //   }
-  // });
+  game.players.forEach(player => {
+    if (player.chips <= 0) {
+      player.out = true;
+      console.log(player.display_name, 'is out.');
+    }
+  });
+
+  // if there is only one player left, declare them the winner
+  const playersLeft = game.players.filter(player => !player.out);
+  if (playersLeft.length === 1) {
+    game.game_winner = {
+      id: playersLeft[0].id,
+      display_name: playersLeft[0].display_name,
+    };
+  }
 
   // limit the blinds to the "all-in" limits, currently these max bets
   // TODO: this will have to change with the introduction of side pots

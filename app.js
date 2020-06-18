@@ -92,6 +92,17 @@ io.on('connect', (socket) => {
     });
   });
 
+  socket.on('reset_game', () => {
+    db.fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
+      const game = gameArray[0];
+      // if there's a game winner, the game can be reset
+      if (game.game_winner) {
+        console.log('resetting game in room', room_id);
+        db.patchAndEmitGame(game.id, db.getNewGame(room_id, user_id));
+      }
+    });
+  });
+
   socket.on('deal_cards', () => {
     console.log('dealing cards in room', room_id);
     db.fetchOrCreateGameAndThenCallback(room_id, user_id, (gameArray) => {
