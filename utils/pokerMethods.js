@@ -63,7 +63,6 @@ const endHand = game => {
     });
     game.hand_winners = winnerArray;
   }
-  console.log('winners', game.hand_winners);
 
   payouts = getPayoutAmountsForWinners(game);
   console.log('payouts:', payouts);
@@ -103,18 +102,15 @@ const endHand = game => {
 const placeBet = (game, userId, betAmount) => {
   // round it off to 2 decimals
   betAmount = parseFloat(betAmount.toFixed(2));
-  game.players = game.players
-    .filter(player => !player.out && !player.folded)
-    .map(player => {
-      if (player.id === userId) {
-        // subtract money from player
-        player.chips -= betAmount;
-        // increase player's current_stage_bet and current_hand_bet
-        player.current_stage_bet += betAmount;
-        player.current_hand_bet += betAmount;
-      }
-      return player;
-    });
+
+  // get a pointer/reference to the player to modify
+  const bettingPlayer = game.players.find(player => player.id === userId);
+  // subtract money from player
+  bettingPlayer.chips -= betAmount;
+  // increase player's current_stage_bet and current_hand_bet
+  bettingPlayer.current_stage_bet += betAmount;
+  bettingPlayer.current_hand_bet += betAmount;
+
   // add money to pot
   game.pot += betAmount;
   
