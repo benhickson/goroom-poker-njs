@@ -1,4 +1,4 @@
-const PokerEvaluator = require('../poker-evaluator-0.3.2');
+const PokerEvaluator = require('latest-poker-evaluator');
 const cards = require('./cards');
 const { START_CHIPS } = require('./constants');
 
