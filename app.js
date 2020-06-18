@@ -80,6 +80,7 @@ io.on('connect', (socket) => {
           display_name: player.display_name,
           chips: START_CHIPS.player_stack,
           cards: [],
+          show_cards: false,
           current_stage_bet: 0,
           current_hand_bet: 0,
           folded: false,
@@ -131,6 +132,8 @@ io.on('connect', (socket) => {
         // deal the cards
         game.players = game.players
           .map(player => {
+            // hide cards from other players
+            player.show_cards = false;
             // clear any cards from the prior hands
             player.cards = [];
             return player;

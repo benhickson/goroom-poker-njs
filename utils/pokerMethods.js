@@ -28,6 +28,8 @@ const getSmallestChipStackAmount = game => {
 }
 
 const endHand = game => {
+  
+  // evaluate the cards set the winner(s) of the hand
   if (game.board_cards.length < 5) {
     // can't evaluate hands because not enough cards in play
     const winningPlayer = game.players.filter(player => !player.folded && !player.out)[0];
@@ -64,6 +66,14 @@ const endHand = game => {
     game.hand_winners = winnerArray;
   }
 
+  // show everyone's cards
+  // TODO: this will have to change when show/muck cards options are enabled.
+  game.players = game.players.map(player => {
+    player.show_cards = true;
+    return player;
+  });
+
+  // payouts
   payouts = getPayoutAmountsForWinners(game);
   console.log('payouts:', payouts);
   game.pot = 0;

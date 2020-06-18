@@ -26,6 +26,7 @@
             "three hearts",
             "four clubs"
           ],
+          "show_cards": false,
           "current_stage_bet": 25,
           "current_hand_bet": 120,
           "folded": false,
@@ -40,6 +41,7 @@
             "ace hearts",
             "king diamonds"
           ],
+          "show_cards": false,
           "current_stage_bet": 35,
           "current_hand_bet": 130,
           "folded": false,

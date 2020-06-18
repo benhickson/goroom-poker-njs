@@ -36,9 +36,11 @@ const filterGameState = (game, user_id) => {
   // not sure why, but for some reason sometimes game is undefined
   // so, we wrap it in this if block to prevent errors
   if (game && game.started) {
-    // only show the player their own cards
+    // By default, only show the player their own cards.
+    // Also show the player other people's cards if those
+    // other people have elected to "show", via show_cards.
     game.players = game.players.map(player => {
-      if (player.id === user_id) {
+      if (player.id === user_id || player.show_cards) {
         return player;
       } else {
         player.cards = ['back', 'back']
