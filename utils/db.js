@@ -36,13 +36,15 @@ const filterGameState = (game, user_id) => {
   // not sure why, but for some reason sometimes game is undefined
   // so, we wrap it in this if block to prevent errors
   if (game && game.started) {
-    // only show the player their own cards
+    // By default, only show the player their own cards.
+    // Also show the player other people's cards if those
+    // other people have elected to "show", via show_cards.
     game.players = game.players.map(player => {
-      if (player.id === user_id) {
-        return player
+      if (player.id === user_id || player.show_cards) {
+        return player;
       } else {
         player.cards = ['back', 'back']
-        return player
+        return player;
       }
     });
 
@@ -53,9 +55,8 @@ const filterGameState = (game, user_id) => {
   return game;
 }
 
-const createNewGame = (room_id, creator_id) => {
-  console.log('user', creator_id, 'is creating game for room', room_id)
-  const newGame = {
+const getNewGame = (room_id, creator_id) => {
+  return {
     // "id": null, // created by database
     "started": false,
     "room_id": room_id,
@@ -64,24 +65,32 @@ const createNewGame = (room_id, creator_id) => {
     "pending_players": [],
     "players": [],
     "pot": 0,
+    "deck": [],
     "board_cards": [],
     "dealer": 0,            // zeroes instead of nulls, to reset things on the frontend.
     "next_player": 0,         // likely better to manage this in the frontend.
+    "max_bet_for_hand": null,
+    "max_bet_next_player": null,
     "bet_leader": null,
     "stage": 0,
     "big_blind": START_CHIPS.big_blind,
     "small_blind": START_CHIPS.small_blind,
-    "amount_to_stay": null,
-    "cost_to_call": null,
+    "amount_to_stay": 0,
+    "cost_to_call": 0,
     "turn_options": null,     // 'before-bets','after-bets','end-not-called'
-    "hand_winners": []
-  };
+    "hand_winners": [],
+    "game_winner": null,
+  }
+};
+
+const createNewGame = (room_id, creator_id) => {
+  console.log('user', creator_id, 'is creating game for room', room_id)
   return fetch(GAMES_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(newGame)
+    body: JSON.stringify(getNewGame(room_id, creator_id))
   })
     .then(r => r.json())
 }
@@ -123,5 +132,6 @@ module.exports = {
   filterGameState, 
   createNewGame, 
   patchAndEmitGame, 
-  patchGameAndEmitPrivateAvailability 
+  patchGameAndEmitPrivateAvailability,
+  getNewGame,
 };
