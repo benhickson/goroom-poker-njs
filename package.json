@@ -24,7 +24,7 @@
     "json-server": "^0.16.1",
     "jwt-decode": "^2.2.0",
     "latest-poker-evaluator": "^0.3.2",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "nodemon": "^1.14.3",
     "socket.io": "^2.0.4"
   },
